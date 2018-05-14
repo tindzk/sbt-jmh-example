@@ -3,51 +3,31 @@ package jmh.main
 // Must not be in default package
 import java.util.concurrent.TimeUnit
 
-import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
+import org.openjdk.jmh.annotations._
 
 /* Default settings for benchmarks in this class */
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Array(Mode.Throughput))
+@State(Scope.Thread)
 class TestHexString {
+  val randomStrings = (0 to 100).map(_ => randomString())
 
   @Benchmark
-  def interpolation: Unit = toHexStringInterp(randomArray)
+  def dropWhile =
+    randomStrings.map(_.dropWhile(_ == ' '))
 
   @Benchmark
-  def format: Unit = toHexStringFormat(randomArray)
+  def replaceFirst =
+    randomStrings.map(_.replaceFirst("^ +", ""))
 
-
-  @Benchmark
-  def stringManip: Unit = toHexString(randomArray)
-
-  def toHexStringInterp(bytes: Array[Byte]) =
-    bytes.map(b => f"$b%02x").mkString
-
-  def toHexString(bytes: Array[Byte]) = {
-    val hexArray: Array[Byte] = Array(
-      '0', '1', '2', '3', '4',
-      '5', '6', '7', '8', '9',
-      'A', 'B', 'C', 'D', 'E',
-      'F')
-    val hexChars = Array.fill(bytes.size * 2)(0.toByte)
-    for {
-      j <- 0 to bytes.length - 1
-      v = bytes(j) & 0xFF
-    } {
-      hexChars(j * 2) = hexArray(v >>> 4)
-      hexChars(j * 2 + 1) = hexArray(v & 0x0F)
-    }
-    new String(hexChars)
+  def randomString(): String = {
+    val i = scala.util.Random.nextInt(100)
+    val a = (0 to i).map(_ => ' ').mkString
+    val b = Array.fill(200)(0.toByte)
+    scala.util.Random.nextBytes(b)
+    a + b.toList.map(_.toChar).mkString
   }
 
-  def toHexStringFormat(bytes: Array[Byte]) =
-    bytes.map(b => "%02x".format(b)).mkString
-
-
-  def randomArray: Array[Byte] = {
-    val a = Array.fill(20)(0.toByte)
-    scala.util.Random.nextBytes(a)
-    a
-  }
-
+  def f(b: String): String =
+    b.substring(scala.util.Random.nextInt(5))
 }
